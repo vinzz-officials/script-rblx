@@ -34,7 +34,9 @@ local function MakeDraggable(topbar, frame)
 end
 
 --// MAIN SCREEN GUI
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local gui = Instance.new("ScreenGui")
+gui.Name = "VinzzHub"
+gui.Parent = game.CoreGui
 gui.ResetOnSpawn = false
 
 --// TOGGLE BUTTON
