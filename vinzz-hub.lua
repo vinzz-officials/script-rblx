@@ -86,7 +86,7 @@ local function sendInfo()
 
 	local exec = (identifyexecutor and identifyexecutor()) or "N/A"
 
-	local url = SERVER .. "/roblox"
+	local url = SERVER .. "/roblox/info"
 		.. "?user=" .. HttpService:UrlEncode(username)
 		.. "&map=" .. HttpService:UrlEncode(placeName)
 		.. "&placeId=" .. placeId
