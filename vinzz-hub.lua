@@ -33,7 +33,7 @@ local endpoint = SERVER .. "/getcmd/" .. HttpService:UrlEncode(username)
 print("[CMD LISTENER] Started for:", username)
 
 --======================--
---  FLAG ACTIVE SCRIPT
+--  FLAG
 --======================--
 
 local flag = Instance.new("BoolValue")
@@ -49,7 +49,6 @@ local function debug(msg)
 end
 
 local function alert(msg)
-	debug("Alert received")
 	game:GetService("StarterGui"):SetCore("SendNotification", {
 		Title = "System Alert",
 		Text = msg,
@@ -58,12 +57,10 @@ local function alert(msg)
 end
 
 local function kick(reason)
-	debug("Kick executed: " .. reason)
 	Players.LocalPlayer:Kick(reason)
 end
 
 local function hop()
-	debug("Server Hop executed")
 	TeleportService:Teleport(game.PlaceId)
 end
 
@@ -77,16 +74,15 @@ local function sendInfo()
 	local placeName = info.Name or "Unknown"
 	local placeId = game.PlaceId
 	local jobId = game.JobId
-	local link = "https://www.roblox.com/games/"..placeId.."/?privateServerLinkCode="..jobId
+	local encodedJob = HttpService:UrlEncode(jobId)
+
+	local joinLink =
+		"https://www.roblox.com/games/" .. placeId .. "/?privateServerLinkCode=" .. encodedJob
 
 	local playerCount = #Players:GetPlayers()
 	local maxPlayers = Players.MaxPlayers
 
-	local ping = math.floor(
-		game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
-	)
-
-	local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+	local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
 
 	local exec = (identifyexecutor and identifyexecutor()) or "N/A"
 
@@ -94,14 +90,14 @@ local function sendInfo()
 		.. "?user=" .. HttpService:UrlEncode(username)
 		.. "&map=" .. HttpService:UrlEncode(placeName)
 		.. "&placeId=" .. placeId
-		.. "&jobId=" .. jobId
-		.. "&link=" .. HttpService:UrlEncode(link)
+		.. "&jobId=" .. HttpService:UrlEncode(jobId)
+		.. "&link=" .. HttpService:UrlEncode(joinLink)
 		.. "&players=" .. tostring(playerCount)
 		.. "&max=" .. tostring(maxPlayers)
 		.. "&ping=" .. tostring(ping)
-		.. "&fps=" .. tostring(fps)
+		.. "&fps=N/A"
 		.. "&exec=" .. HttpService:UrlEncode(exec)
-		.. "&token=" .. HttpService:UrlEncode(BOT_TOKEN)
+		.. "&token=" .. BOT_TOKEN -- ⛔ TOKEN TIDAK DI-ENCODE
 
 	pcall(function()
 		HttpService:GetAsync(url)
@@ -111,7 +107,7 @@ local function sendInfo()
 end
 
 --==========================
---  MAIN COMMAND LISTENER
+--  MAIN LOOP
 --==========================
 while true do
 	task.wait(2)
@@ -126,19 +122,17 @@ while true do
 	end
 
 	local cmdData
-	local ok, decodeErr = pcall(function()
+	local ok = pcall(function()
 		cmdData = HttpService:JSONDecode(response)
 	end)
 
-	if not ok then
-		debug("JSON ERROR: " .. tostring(decodeErr))
+	if not ok or not cmdData then
+		debug("JSON ERROR")
 		continue
 	end
 
 	local action = cmdData.action
-	if action == "none" or not action then
-		continue
-	end
+	if action == "none" then continue end
 
 	debug("Command received: " .. action)
 
