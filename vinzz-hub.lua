@@ -1,171 +1,99 @@
---======================--
---  CONFIG
---======================--
-
-local BOT_TOKEN = "8506651300:AAEuhXSs86i1x_yCznkfefjz8vIz9gGTqmg"
-local SERVER = "https://remote-roblox.vercel.app"
-
---======================--
---  CUSTOM HTTP WRAPPER
---======================--
-
-local Http = {}
-
-function Http:GetAsync(url)
-    return game:HttpGet(url)
-end
-
-function Http:JSONDecode(str)
-    return game:GetService("HttpService"):JSONDecode(str)
-end
-
-function Http:UrlEncode(str)
-    return game:GetService("HttpService"):UrlEncode(str)
-end
-
-local HttpService = Http
+local HttpService = game:GetService("HttpService")
 local Players = game:GetService("Players")
-local TeleportService = game:GetService("TeleportService")
-local username = Players.LocalPlayer.Name
 
-local endpoint = SERVER .. "/getcmd/" .. HttpService:UrlEncode(username)
+local BASE = "https://YOUR-VERCEL-APP/api"
+local TOKEN = "TOKEN-BOT-TELEGRAM"
 
-print("[CMD LISTENER] Started for:", username)
+local ActivePlayers = {} -- player yg aktif GETCMD
 
---======================--
---  FLAG ACTIVE SCRIPT
---======================--
-
-local flag = Instance.new("BoolValue")
-flag.Name = "ScriptConnected"
-flag.Parent = Players.LocalPlayer
-
---======================--
---  UTILS
---======================--
-
-local function debug(msg)
-	print("[CMD DEBUG] " .. msg)
+-- register player aktif setiap GETCMD
+local function markActive(name)
+	if not ActivePlayers[name] then
+		ActivePlayers[name] = true
+	end
 end
 
-local function alert(msg)
-	debug("Alert received")
-	game:GetService("StarterGui"):SetCore("SendNotification", {
-		Title = "System Alert",
-		Text = msg,
-		Duration = 4
-	})
+-- kirim info detail
+local function sendInfo(player)
+	local payload = {
+		user = player.Name,
+		map = game.PlaceId,
+		mapId = game.PlaceId,
+		jobId = game.JobId,
+		link = "https://www.roblox.com/games/"..game.PlaceId.."/?privateServerLinkCode="..game.JobId,
+		players = #Players:GetPlayers(),
+		max = Players.MaxPlayers,
+		token = TOKEN
+	}
+
+	local qs = "?"
+	for k,v in pairs(payload) do
+		qs = qs .. k .. "=" .. HttpService:UrlEncode(tostring(v)) .. "&"
+	end
+
+	HttpService:GetAsync(BASE.."/roblox/info"..qs)
 end
 
-local function kick(reason)
-	debug("Kick executed: " .. reason)
-	Players.LocalPlayer:Kick(reason)
+-- kirim playerlist (hanya yg aktif GETCMD)
+local function sendPlayerList(player)
+	local list = ""
+
+	for name,_ in pairs(ActivePlayers) do
+		list = list .. name .. "\n"
+	end
+
+	local qs = "?user="..player.Name.."&list="..HttpService:UrlEncode(list).."&token="..TOKEN
+
+	HttpService:GetAsync(BASE.."/roblox/playerlist"..qs)
 end
 
-local function hop()
-	debug("Server Hop executed")
-	TeleportService:Teleport(game.PlaceId)
-end
+-------------------------------------------
+-- LOOP GETCMD
+-------------------------------------------
 
---==========================
---  SEND INFO → SERVER
---==========================
-local function sendInfo()
-	local marketplace = game:GetService("MarketplaceService")
-	local info = marketplace:GetProductInfo(game.PlaceId)
-	local placeName = info.Name or "Unknown"
+task.spawn(function()
+	while true do
+		for _, player in ipairs(Players:GetPlayers()) do
+			local url = BASE.."/getcmd/"..player.Name
+			local result
 
-	local playerCount = #Players:GetPlayers()
-	local maxPlayers = Players.MaxPlayers
+			pcall(function()
+				result = HttpService:GetAsync(url)
+			end)
 
-	local url =
-		SERVER .. "/roblox/info"
-		.. "?user=" .. HttpService:UrlEncode(username)
-		.. "&map=" .. HttpService:UrlEncode(placeName)
-		.. "&players=" .. tostring(playerCount)
-		.. "&max=" .. tostring(maxPlayers)
-		.. "&token=" .. HttpService:UrlEncode(BOT_TOKEN)
+			if result then
+				local data = HttpService:JSONDecode(result)
 
-	pcall(function()
-		HttpService:GetAsync(url)
-	end)
+				if data.action ~= "none" then
+					
+					-- tandai player aktif
+					markActive(player.Name)
 
-	debug("Info sent to server")
-end
+					if data.action == "info" then
+						sendInfo(player)
 
---==========================
---  SEND PLAYER LIST → SERVER
---==========================
-local function sendPlayerList()
-	local list = {}
+					elseif data.action == "playerlist" then
+						sendPlayerList(player)
 
-	for _, pl in ipairs(Players:GetPlayers()) do
-		-- HANYA player yg aktif menjalankan script
-		if pl:FindFirstChild("ScriptConnected") then
-			table.insert(list, pl.Name)
+					elseif data.action == "kick" then
+						player:Kick(data.reason or "Kicked")
+
+					elseif data.action == "alert" then
+						game.StarterGui:SetCore("SendNotification", {
+							Title = "Alert",
+							Text = data.message or ""
+						})
+
+					elseif data.action == "srvhop" then
+						local TeleportService = game:GetService("TeleportService")
+						pcall(function()
+							TeleportService:Teleport(game.PlaceId, player)
+						end)
+					end
+				end
+			end
 		end
+
+		task.wait(1)
 	end
-
-	local csv = table.concat(list, ",")
-
-	local url =
-		SERVER .. "/roblox/playerlist"
-		.. "?user=" .. HttpService:UrlEncode(username)
-		.. "&list=" .. HttpService:UrlEncode(csv)
-		.. "&token=" .. HttpService:UrlEncode(BOT_TOKEN)
-
-	pcall(function()
-		HttpService:GetAsync(url)
-	end)
-
-	debug("Player list sent to server")
-end
-
---==========================
---  MAIN COMMAND LISTENER
---==========================
-while true do
-	task.wait(2)
-
-	local success, response = pcall(function()
-		return HttpService:GetAsync(endpoint)
-	end)
-
-	if not success then
-		debug("HTTP ERROR: " .. tostring(response))
-		continue
-	end
-
-	local cmdData
-	local ok, decodeErr = pcall(function()
-		cmdData = HttpService:JSONDecode(response)
-	end)
-
-	if not ok then
-		debug("JSON ERROR: " .. tostring(decodeErr))
-		continue
-	end
-
-	local action = cmdData.action
-	if action == "none" or not action then
-		continue
-	end
-
-	debug("Command received: " .. action)
-
-	if action == "kick" then
-		kick(cmdData.reason or "No reason")
-
-	elseif action == "alert" then
-		alert(cmdData.message or "No message")
-
-	elseif action == "srvhop" then
-		hop()
-
-	elseif action == "info" then
-		sendInfo()
-
-	elseif action == "playerlist" then
-		sendPlayerList()
-	end
-end
+end)
