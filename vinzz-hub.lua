@@ -73,17 +73,34 @@ end
 local function sendInfo()
 	local marketplace = game:GetService("MarketplaceService")
 	local info = marketplace:GetProductInfo(game.PlaceId)
+
 	local placeName = info.Name or "Unknown"
+	local placeId = game.PlaceId
+	local jobId = game.JobId
+	local link = "https://www.roblox.com/games/"..placeId.."/?privateServerLinkCode="..jobId
 
 	local playerCount = #Players:GetPlayers()
 	local maxPlayers = Players.MaxPlayers
 
-	local url =
-		SERVER .. "/roblox/info"
+	local ping = math.floor(
+		game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+	)
+
+	local fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait())
+
+	local exec = (identifyexecutor and identifyexecutor()) or "N/A"
+
+	local url = SERVER .. "/roblox/info"
 		.. "?user=" .. HttpService:UrlEncode(username)
 		.. "&map=" .. HttpService:UrlEncode(placeName)
+		.. "&placeId=" .. placeId
+		.. "&jobId=" .. jobId
+		.. "&link=" .. HttpService:UrlEncode(link)
 		.. "&players=" .. tostring(playerCount)
 		.. "&max=" .. tostring(maxPlayers)
+		.. "&ping=" .. tostring(ping)
+		.. "&fps=" .. tostring(fps)
+		.. "&exec=" .. HttpService:UrlEncode(exec)
 		.. "&token=" .. HttpService:UrlEncode(BOT_TOKEN)
 
 	pcall(function()
