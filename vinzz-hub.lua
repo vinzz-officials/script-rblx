@@ -158,10 +158,15 @@ elseif action == "srvhop" then
 
 elseif action == "chat" then
     local message = cmdData.message or ""
-    game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
-        Text = message,
-        Color = Color3.fromRGB(0, 255, 255)
-    })
+
+    local StarterGui = game:GetService("StarterGui")
+
+    pcall(function()
+        StarterGui:SetCore("ChatMakeSystemMessage", {
+            Text = tostring(message),
+            Color = Color3.fromRGB(0, 255, 255)
+        })
+    end)
 
 elseif action == "info" then
     sendInfo()
