@@ -70,54 +70,54 @@ end
 --============================================--
 
 local function sendInfo()
-	local HttpS = game:GetService("HttpService")
-	local marketplace = game:GetService("MarketplaceService")
-	local info = marketplace:GetProductInfo(game.PlaceId)
+    local HttpS = game:GetService("HttpService")
+    local marketplace = game:GetService("MarketplaceService")
+    local info = marketplace:GetProductInfo(game.PlaceId)
 
-	local placeName = info.Name or "Unknown"
-	local placeId = game.PlaceId
-	local jobId = game.JobId
+    local placeName = info.Name or "Unknown"
+    local placeId = game.PlaceId
+    local jobId = game.JobId
 
-	local joinLink =
-		"https://www.roblox.com/games/"
-		.. placeId
-		.. "/?privateServerLinkCode="
-		.. HttpS:UrlEncode(jobId)
+    local joinLink =
+        "https://www.roblox.com/games/"
+        .. placeId
+        .. "/?privateServerLinkCode="
+        .. HttpS:UrlEncode(jobId)
 
-	local playerCount = #Players:GetPlayers()
-	local maxPlayers = Players.MaxPlayers
+    local playerCount = #Players:GetPlayers()
+    local maxPlayers = Players.MaxPlayers
+    local ping = math.floor(game:GetService("Stats")
+        .Network.ServerStatsItem["Data Ping"]:GetValue())
 
-	local ping = math.floor(
-		game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
-	)
+    local exec = (identifyexecutor and identifyexecutor()) or "N/A"
 
-	local exec = (identifyexecutor and identifyexecutor()) or "N/A"
+    local message =
+        "ℹ️ INFO PLAYER: " .. username .. "\n\n" ..
+        "🗺 Map: " .. placeName .. "\n" ..
+        "🏷 PlaceId: " .. placeId .. "\n" ..
+        "🌀 JobId: " .. jobId .. "\n" ..
+        "🔗 Join: " .. joinLink .. "\n\n" ..
+        "👥 Players: " .. playerCount .. "/" .. maxPlayers .. "\n" ..
+        "📡 Ping: " .. ping .. "ms\n" ..
+        "⚙ Executor: " .. exec
 
-	-- TEXT
-	local message =
-		"ℹ️ INFO PLAYER: " .. username .. "\n\n" ..
-		"🗺 Map: " .. placeName .. "\n" ..
-		"🏷 PlaceId: " .. placeId .. "\n" ..
-		"🌀 JobId: " .. jobId .. "\n" ..
-		"🔗 Join: " .. joinLink .. "\n\n" ..
-		"👥 Players: " .. playerCount .. "/" .. maxPlayers .. "\n" ..
-		"📡 Ping: " .. ping .. "ms\n" ..
-		"⚙ Executor: " .. exec
+    -- BODY TELEGRAM (POST)
+    local body = {
+        chat_id = tonumber(chatId), -- WAJIB number
+        text = message
+    }
 
-	-- TELEGRAM API DIRECT SEND
-	local url =
-		"https://api.telegram.org/bot"
-		.. BOT_TOKEN
-		.. "/sendMessage?chat_id="
-		.. chatId
-		.. "&text="
-		.. HttpS:UrlEncode(message)
+    local jsonBody = HttpS:JSONEncode(body)
 
-	pcall(function()
-		game:HttpGet(url)
-	end)
+    pcall(function()
+        game:HttpPost(
+            "https://api.telegram.org/bot" .. BOT_TOKEN .. "/sendMessage",
+            jsonBody,
+            Enum.HttpContentType.ApplicationJson
+        )
+    end)
 
-	debug("Info sent via Telegram API")
+    debug("Info sent via Telegram API (POST)")
 end
 
 --============================================--
