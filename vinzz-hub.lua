@@ -4,7 +4,7 @@
 
 local BOT_TOKEN = "8506651300:AAEuhXSs86i1x_yCznkfefjz8vIz9gGTqmg"
 local SERVER = "https://remote-roblox.vercel.app"
-local chatId = "7777604508"
+local chatId = 7777604508
 
 --======================--
 --  HTTP WRAPPER
