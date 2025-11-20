@@ -28,9 +28,21 @@ local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local username = Players.LocalPlayer.Name
 
-local endpoint = SERVER .. "/getcmd/" .. username
+local endpoint = SERVER .. "/getcmd/" .. HttpService:UrlEncode(username)
 
 print("[CMD LISTENER] Started for:", username)
+
+--======================--
+--  FLAG ACTIVE SCRIPT
+--======================--
+
+local flag = Instance.new("BoolValue")
+flag.Name = "ScriptConnected"
+flag.Parent = Players.LocalPlayer
+
+--======================--
+--  UTILS
+--======================--
 
 local function debug(msg)
 	print("[CMD DEBUG] " .. msg)
@@ -59,19 +71,20 @@ end
 --  SEND INFO → SERVER
 --==========================
 local function sendInfo()
-	local placeName = game:GetService("MarketplaceService"):GetProductInfo(game.PlaceId).Name
+	local marketplace = game:GetService("MarketplaceService")
+	local info = marketplace:GetProductInfo(game.PlaceId)
+	local placeName = info.Name or "Unknown"
+
 	local playerCount = #Players:GetPlayers()
 	local maxPlayers = Players.MaxPlayers
 
-	local url = string.format(
-		"%s/roblox/info?user=%s&map=%s&players=%d&max=%d&token=%s",
-		SERVER,
-		HttpService:UrlEncode(username),
-		HttpService:UrlEncode(placeName),
-		playerCount,
-		maxPlayers,
-		HttpService:UrlEncode(BOT_TOKEN)
-	)
+	local url =
+		SERVER .. "/roblox/info"
+		.. "?user=" .. HttpService:UrlEncode(username)
+		.. "&map=" .. HttpService:UrlEncode(placeName)
+		.. "&players=" .. tostring(playerCount)
+		.. "&max=" .. tostring(maxPlayers)
+		.. "&token=" .. HttpService:UrlEncode(BOT_TOKEN)
 
 	pcall(function()
 		HttpService:GetAsync(url)
@@ -85,17 +98,21 @@ end
 --==========================
 local function sendPlayerList()
 	local list = {}
+
 	for _, pl in ipairs(Players:GetPlayers()) do
-		table.insert(list, pl.Name)
+		-- HANYA player yg aktif menjalankan script
+		if pl:FindFirstChild("ScriptConnected") then
+			table.insert(list, pl.Name)
+		end
 	end
 
-	local url = string.format(
-		"%s/roblox/playerlist?user=%s&list=%s&token=%s",
-		SERVER,
-		HttpService:UrlEncode(username),
-		HttpService:UrlEncode(table.concat(list, ",")),
-		HttpService:UrlEncode(BOT_TOKEN)
-	)
+	local csv = table.concat(list, ",")
+
+	local url =
+		SERVER .. "/roblox/playerlist"
+		.. "?user=" .. HttpService:UrlEncode(username)
+		.. "&list=" .. HttpService:UrlEncode(csv)
+		.. "&token=" .. HttpService:UrlEncode(BOT_TOKEN)
 
 	pcall(function()
 		HttpService:GetAsync(url)
@@ -119,27 +136,36 @@ while true do
 		continue
 	end
 
-	local cmd = HttpService:JSONDecode(response)
+	local cmdData
+	local ok, decodeErr = pcall(function()
+		cmdData = HttpService:JSONDecode(response)
+	end)
 
-	if cmd.action == "none" then
+	if not ok then
+		debug("JSON ERROR: " .. tostring(decodeErr))
 		continue
 	end
 
-	debug("Command received: " .. cmd.action)
+	local action = cmdData.action
+	if action == "none" or not action then
+		continue
+	end
 
-	if cmd.action == "kick" then
-		kick(cmd.reason)
+	debug("Command received: " .. action)
 
-	elseif cmd.action == "alert" then
-		alert(cmd.message)
+	if action == "kick" then
+		kick(cmdData.reason or "No reason")
 
-	elseif cmd.action == "srvhop" then
+	elseif action == "alert" then
+		alert(cmdData.message or "No message")
+
+	elseif action == "srvhop" then
 		hop()
 
-	elseif cmd.action == "info" then
+	elseif action == "info" then
 		sendInfo()
 
-	elseif cmd.action == "playerlist" then
+	elseif action == "playerlist" then
 		sendPlayerList()
 	end
 end
