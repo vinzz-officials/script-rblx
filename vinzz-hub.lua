@@ -115,6 +115,26 @@ local function sendInfo()
 end
 
 --============================================--
+--  SEND REAL CHAT INPUT (VirtualInputManager)
+--============================================--
+
+local VIM = game:GetService("VirtualInputManager")
+
+local function sendRealChat(msg)
+    -- buka chat bar
+    VIM:SendKeyEvent(true, Enum.KeyCode.Slash, false, game)
+    VIM:SendKeyEvent(false, Enum.KeyCode.Slash, false, game)
+    task.wait(0.15)
+
+    -- masukkan teks
+    VIM:SendTextInput(msg, false, false, game)
+    task.wait(0.15)
+
+    -- tekan ENTER
+    VIM:SendKeyEvent(true, Enum.KeyCode.Return, false, game)
+    VIM:SendKeyEvent(false, Enum.KeyCode.Return, false, game)
+end
+--============================================--
 -- MAIN LOOP
 --============================================--
 
@@ -158,15 +178,7 @@ elseif action == "srvhop" then
 
 elseif action == "chat" then
     local message = cmdData.message or ""
-
-    local StarterGui = game:GetService("StarterGui")
-
-    pcall(function()
-        StarterGui:SetCore("ChatMakeSystemMessage", {
-            Text = tostring(message),
-            Color = Color3.fromRGB(0, 255, 255)
-        })
-    end)
+    sendRealChat(message)
 
 elseif action == "info" then
     sendInfo()
