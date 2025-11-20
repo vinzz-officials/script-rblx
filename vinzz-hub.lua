@@ -148,23 +148,22 @@ while true do
 	debug("Command received: " .. action)
 
 	if action == "kick" then
-		kick(cmdData.reason or "No reason")
+    kick(cmdData.reason or "No reason")
 
-	elseif action == "alert" then
-		alert(cmdData.message or "No message")
+elseif action == "alert" then
+    alert(cmdData.message or "No message")
 
-	elseif action == "srvhop" then
-		hop()
+elseif action == "srvhop" then
+    hop()
 
-	elseif action == "chat" then
+elseif action == "chat" then
     local message = cmdData.message or ""
-
     game:GetService("StarterGui"):SetCore("ChatMakeSystemMessage", {
         Text = message,
         Color = Color3.fromRGB(0, 255, 255)
     })
 
-	elseif action == "info" then
-		sendInfo()
+elseif action == "info" then
+    sendInfo()
 	end
 end
