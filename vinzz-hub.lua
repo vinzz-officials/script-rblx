@@ -163,7 +163,6 @@ while true do
         Text = message,
         Color = Color3.fromRGB(0, 255, 255)
     })
-	end
 
 	elseif action == "info" then
 		sendInfo()
