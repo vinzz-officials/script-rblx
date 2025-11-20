@@ -70,7 +70,8 @@ end
 --============================================--
 
 local function sendInfo()
-    local Http = game:GetService("HttpService")
+    local HS = game:GetService("HttpService")
+    local req = (syn and syn.request) or http_request or request
 
     local marketplace = game:GetService("MarketplaceService")
     local info = marketplace:GetProductInfo(game.PlaceId)
@@ -83,7 +84,6 @@ local function sendInfo()
 
     local playerCount = #Players:GetPlayers()
     local maxPlayers = Players.MaxPlayers
-
     local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
     local exec = (identifyexecutor and identifyexecutor()) or "N/A"
 
@@ -99,16 +99,19 @@ local function sendInfo()
 
     local url = "https://api.telegram.org/bot"..BOT_TOKEN.."/sendMessage"
 
-    local body = Http:JSONEncode({
-        chat_id = chatId,
-        text = message
+    req({
+        Url = url,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = HS:JSONEncode({
+            chat_id = chatId,
+            text = message
+        })
     })
 
-    pcall(function()
-        game:HttpPost(url, body, "application/json")
-    end)
-
-    print("INFO SENT!")
+    print("Telegram INFO SENT!")
 end
 
 --============================================--
