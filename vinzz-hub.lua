@@ -1,95 +1,60 @@
-local HttpService = game:GetService("HttpService")
+local Http = game:GetService("HttpService")
 local Players = game:GetService("Players")
 
-local BASE = "https://YOUR-VERCEL-APP/api"
-local TOKEN = "TOKEN-BOT-TELEGRAM"
+local BASE = "https://remote-roblox.vercel.app"
+local TOKEN = "8506651300:AAEuhXSs86i1x_yCznkfefjz8vIz9gGTqmg"
 
-local ActivePlayers = {} -- player yg aktif GETCMD
-
--- register player aktif setiap GETCMD
-local function markActive(name)
-	if not ActivePlayers[name] then
-		ActivePlayers[name] = true
-	end
-end
-
--- kirim info detail
 local function sendInfo(player)
-	local payload = {
+	local data = {
 		user = player.Name,
-		map = game.PlaceId,
-		mapId = game.PlaceId,
+		map = game.Name,
+		placeId = game.PlaceId,
 		jobId = game.JobId,
 		link = "https://www.roblox.com/games/"..game.PlaceId.."/?privateServerLinkCode="..game.JobId,
 		players = #Players:GetPlayers(),
 		max = Players.MaxPlayers,
+		ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()),
+		fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait()),
+		exec = identifyexecutor and identifyexecutor() or "N/A",
 		token = TOKEN
 	}
 
 	local qs = "?"
-	for k,v in pairs(payload) do
-		qs = qs .. k .. "=" .. HttpService:UrlEncode(tostring(v)) .. "&"
+	for k, v in pairs(data) do
+		qs = qs .. k .. "=" .. Http:UrlEncode(tostring(v)) .. "&"
 	end
 
-	HttpService:GetAsync(BASE.."/roblox/info"..qs)
+	Http:GetAsync(BASE.."/roblox/info"..qs)
 end
-
--- kirim playerlist (hanya yg aktif GETCMD)
-local function sendPlayerList(player)
-	local list = ""
-
-	for name,_ in pairs(ActivePlayers) do
-		list = list .. name .. "\n"
-	end
-
-	local qs = "?user="..player.Name.."&list="..HttpService:UrlEncode(list).."&token="..TOKEN
-
-	HttpService:GetAsync(BASE.."/roblox/playerlist"..qs)
-end
-
--------------------------------------------
--- LOOP GETCMD
--------------------------------------------
 
 task.spawn(function()
 	while true do
-		for _, player in ipairs(Players:GetPlayers()) do
-			local url = BASE.."/getcmd/"..player.Name
-			local result
-
+		for _, plr in ipairs(Players:GetPlayers()) do
+			local raw
 			pcall(function()
-				result = HttpService:GetAsync(url)
+				raw = Http:GetAsync(BASE.."/getcmd/" .. plr.Name)
 			end)
 
-			if result then
-				local data = HttpService:JSONDecode(result)
+			if raw then
+				local cmd = Http:JSONDecode(raw)
 
-				if data.action ~= "none" then
-					
-					-- tandai player aktif
-					markActive(player.Name)
+				if cmd.action == "info" then
+					sendInfo(plr)
 
-					if data.action == "info" then
-						sendInfo(player)
+				elseif cmd.action == "kick" then
+					plr:Kick(cmd.reason or "Kicked")
 
-					elseif data.action == "playerlist" then
-						sendPlayerList(player)
+				elseif cmd.action == "alert" then
+					game.StarterGui:SetCore("SendNotification", {
+						Title = "Alert",
+						Text = cmd.message or ""
+					})
 
-					elseif data.action == "kick" then
-						player:Kick(data.reason or "Kicked")
-
-					elseif data.action == "alert" then
-						game.StarterGui:SetCore("SendNotification", {
-							Title = "Alert",
-							Text = data.message or ""
-						})
-
-					elseif data.action == "srvhop" then
-						local TeleportService = game:GetService("TeleportService")
-						pcall(function()
-							TeleportService:Teleport(game.PlaceId, player)
-						end)
-					end
+				elseif cmd.action == "srvhop" then
+					local TS = game:GetService("TeleportService")
+					pcall(function()
+						TS:Teleport(game.PlaceId, plr)
+					end)
 				end
 			end
 		end
