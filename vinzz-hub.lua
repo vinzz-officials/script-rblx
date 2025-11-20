@@ -13,23 +13,24 @@ local function sendInfo(player)
 		link = "https://www.roblox.com/games/"..game.PlaceId.."/?privateServerLinkCode="..game.JobId,
 		players = #Players:GetPlayers(),
 		max = Players.MaxPlayers,
-		ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue()),
-		fps = math.floor(1 / game:GetService("RunService").RenderStepped:Wait()),
 		exec = identifyexecutor and identifyexecutor() or "N/A",
 		token = TOKEN
 	}
 
 	local qs = "?"
-	for k, v in pairs(data) do
+	for k,v in pairs(data) do
 		qs = qs .. k .. "=" .. Http:UrlEncode(tostring(v)) .. "&"
 	end
 
-	Http:GetAsync(BASE.."/roblox/info"..qs)
+	pcall(function()
+		Http:GetAsync(BASE.."/roblox/info"..qs)
+	end)
 end
 
 task.spawn(function()
 	while true do
 		for _, plr in ipairs(Players:GetPlayers()) do
+
 			local raw
 			pcall(function()
 				raw = Http:GetAsync(BASE.."/getcmd/" .. plr.Name)
@@ -51,14 +52,12 @@ task.spawn(function()
 					})
 
 				elseif cmd.action == "srvhop" then
-					local TS = game:GetService("TeleportService")
 					pcall(function()
-						TS:Teleport(game.PlaceId, plr)
+						game:GetService("TeleportService"):Teleport(game.PlaceId, plr)
 					end)
 				end
 			end
 		end
-
 		task.wait(1)
 	end
 end)
