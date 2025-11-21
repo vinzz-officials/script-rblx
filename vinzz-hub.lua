@@ -29,10 +29,33 @@ local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local username = Players.LocalPlayer.Name
 
+local function sendStart()
+    local HS = game:GetService("HttpService")
+    local req = (syn and syn.request) or http_request or request
+
+    local msg = "🟢 " .. username .. " is now online."
+
+    local url = "https://api.telegram.org/bot"..BOT_TOKEN.."/sendMessage"
+
+    req({
+        Url = url,
+        Method = "POST",
+        Headers = {
+            ["Content-Type"] = "application/json"
+        },
+        Body = HS:JSONEncode({
+            chat_id = chatId,
+            text = msg
+        })
+    })
+
+    
+end
+
 local endpoint = SERVER .. "/getcmd/" .. HttpService:UrlEncode(username)
 
 print("[CMD LISTENER] Started for:", username)
-
+sendStart()
 --======================--
 -- FLAG
 --======================--
