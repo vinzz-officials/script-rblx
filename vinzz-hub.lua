@@ -146,7 +146,6 @@ local function FlyOff()
 end
 
 -- CONSOLE COMMAND HANDLER
-game:GetService("ReplicatedStorage").RemoteEvent.OnClientEvent:Connect(function(cmd)
     if cmd == "fly_on" then
         FlyOn()
     elseif cmd == "fly_off" then
