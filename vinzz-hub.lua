@@ -103,18 +103,20 @@ local function sendInfo()
     local placeId = game.PlaceId
     local jobId = game.JobId
 
-    local joinLink = "roblox://experiences/start?placeId="..placeId.."&gameInstanceId="..jobId
+    -- URL yang dijadikan button
+    local joinUrl = "roblox://experiences/start?placeId="..placeId.."&gameInstanceId="..jobId
+
     local playerCount = #Players:GetPlayers()
     local maxPlayers = Players.MaxPlayers
     local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
     local exec = (identifyexecutor and identifyexecutor()) or "N/A"
 
+    -- pesan TANPA link
     local message =
         "ℹ️ INFO PLAYER: " .. username .. "\n\n" ..
         "🗺 Map: " .. placeName .. "\n" ..
         "🏷 PlaceId: " .. placeId .. "\n" ..
-        "🌀 JobId: " .. jobId .. "\n" ..
-        "🔗 Join: " .. joinLink .. "\n\n" ..
+        "🌀 JobId: " .. jobId .. "\n\n" ..
         "👥 Players: " .. playerCount .. "/" .. maxPlayers .. "\n" ..
         "📡 Ping: " .. ping .. "ms\n" ..
         "⚙ Executor: " .. exec
@@ -129,13 +131,19 @@ local function sendInfo()
         },
         Body = HS:JSONEncode({
             chat_id = chatId,
-            text = message
+            text = message,
+            reply_markup = {
+                inline_keyboard = {
+                    {
+                        { text = "JOIN SERVER", url = joinUrl }
+                    }
+                }
+            }
         })
     })
 
     print("Telegram INFO SENT!")
 end
-
 --============================================--
 -- MAIN LOOP
 --============================================--
