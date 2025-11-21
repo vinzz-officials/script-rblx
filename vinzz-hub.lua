@@ -92,13 +92,17 @@ local function TPToPlayer(name)
     local target = game.Players:FindFirstChild(name)
     if not target then return warn("Player not found!") end
 
-    local char = target.Character
-    if not char then return warn("Target has no character!") end
+    local targetChar = target.Character
+    if not targetChar then return warn("Target has no character!") end
 
-    local hrp = char:FindFirstChild("HumanoidRootPart")
-    if not hrp then return warn("Target HRP missing!") end
+    local targetHRP = targetChar:FindFirstChild("HumanoidRootPart")
+    if not targetHRP then return warn("Target HRP missing!") end
 
-    HRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0) -- teleport di atas target biar aman
+    local LP = game.Players.LocalPlayer
+    local char = LP.Character or LP.CharacterAdded:Wait()
+    local HRP = char:WaitForChild("HumanoidRootPart") -- INI YG KURANG DALAM CODEMU
+
+    HRP.CFrame = targetHRP.CFrame + Vector3.new(0, 3, 0)
 end
 --============================================--
 --  SEND INFO → DIRECT TELEGRAM API
