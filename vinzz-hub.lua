@@ -88,6 +88,18 @@ local function hop()
 	TeleportService:Teleport(game.PlaceId)
 end
 
+local function TPToPlayer(name)
+    local target = game.Players:FindFirstChild(name)
+    if not target then return warn("Player not found!") end
+
+    local char = target.Character
+    if not char then return warn("Target has no character!") end
+
+    local hrp = char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return warn("Target HRP missing!") end
+
+    HRP.CFrame = hrp.CFrame + Vector3.new(0, 3, 0) -- teleport di atas target biar aman
+end
 --============================================--
 --  SEND INFO → DIRECT TELEGRAM API
 --============================================--
