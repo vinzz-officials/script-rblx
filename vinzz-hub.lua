@@ -104,7 +104,8 @@ local function sendInfo()
     local jobId = game.JobId
 
     -- URL yang dijadikan button
-    local joinUrl = "https://www.roblox.com/games/"..placeId.."/?gameInstanceId="..jobId
+    local joinUrl = "roblox://experiences/start?placeId="..placeId.."&gameInstanceId="..jobId
+
     local playerCount = #Players:GetPlayers()
     local maxPlayers = Players.MaxPlayers
     local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
