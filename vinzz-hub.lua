@@ -91,6 +91,69 @@ end
 --============================================--
 --  SEND INFO → DIRECT TELEGRAM API
 --============================================--
+local Players = game:GetService("Players")
+local UIS = game:GetService("UserInputService")
+local LP = Players.LocalPlayer
+local Char = LP.Character or LP.CharacterAdded:Wait()
+local HRP = Char:WaitForChild("HumanoidRootPart")
+
+local flying = false
+local speed = 3
+
+local BG, BV
+
+local function FlyOn()
+    if flying then return end
+    flying = true
+
+    BG = Instance.new("BodyGyro")
+    BG.P = 9e4
+    BG.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+    BG.CFrame = workspace.CurrentCamera.CFrame
+    BG.Parent = HRP
+
+    BV = Instance.new("BodyVelocity")
+    BV.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+    BV.Parent = HRP
+
+    Char.Humanoid.PlatformStand = true
+
+    task.spawn(function()
+        while flying do
+            task.wait()
+
+            BG.CFrame = workspace.CurrentCamera.CFrame
+            local cam = workspace.CurrentCamera
+            local move = Vector3.zero
+
+            if UIS:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
+            if UIS:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
+            if UIS:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
+            if UIS:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0,1,0) end
+            if UIS:IsKeyDown(Enum.KeyCode.LeftShift) then move -= Vector3.new(0,1,0) end
+
+            BV.Velocity = move * (speed * 20)
+        end
+    end)
+end
+
+local function FlyOff()
+    flying = false
+    Char.Humanoid.PlatformStand = false
+    if BG then BG:Destroy() end
+    if BV then BV:Destroy() end
+end
+
+-- CONSOLE COMMAND HANDLER
+game:GetService("ReplicatedStorage").RemoteEvent.OnClientEvent:Connect(function(cmd)
+    if cmd == "fly_on" then
+        FlyOn()
+    elseif cmd == "fly_off" then
+        FlyOff()
+    end
+end)
+
 
 local function sendInfo()
     local HS = game:GetService("HttpService")
