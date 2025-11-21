@@ -103,8 +103,7 @@ local function sendInfo()
     local placeId = game.PlaceId
     local jobId = game.JobId
 
-    local joinLink = "https://www.roblox.com/games/"..placeId.."/?privateServerLinkCode="..jobId
-
+    local joinLink = "roblox://experiences/start?placeId="..placeId.."&gameInstanceId="..jobId
     local playerCount = #Players:GetPlayers()
     local maxPlayers = Players.MaxPlayers
     local ping = math.floor(game:GetService("Stats").Network.ServerStatsItem["Data Ping"]:GetValue())
