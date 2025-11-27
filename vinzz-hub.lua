@@ -74,7 +74,7 @@ end
 
 local function alert(msg)
 	game:GetService("StarterGui"):SetCore("SendNotification", {
-		Title = "System Alert",
+		Title = "Rip_luffy",
 		Text = msg,
 		Duration = 4
 	})
